@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+import openai
 
 # Initialize the Flask app
 app = Flask(__name__)
