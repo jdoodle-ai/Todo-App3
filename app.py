@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+import os
+import requests
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -15,6 +17,7 @@ class Task(db.Model):
     title = db.Column(db.String(200), nullable=False)
     completed = db.Column(db.Boolean, default=False)
     description = db.Column(db.Text, default="")  # New field to store markdown text
+    subtasks = db.Column(db.Text, default="")  # New field to store subtasks
 
 
 # Route for the homepage
@@ -57,6 +60,39 @@ def complete_task(task_id):
     if task:
         task.completed = not task.completed  # Toggle the completed status
         db.session.commit()
+    return redirect(url_for('index'))
+
+
+
+
+
+@app.route('/generate_subtasks/<int:task_id>', methods=['POST'])
+def generate_subtasks(task_id):
+    task = Task.query.get(task_id)
+    if task:
+        api_key = os.getenv('OPENAI_API_KEY')
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json'
+        }
+        data = {
+            'model': 'gpt-4o',
+            'messages': [
+                {
+                    'role': 'system',
+                    'content': 'You are an AI assistant that helps users divide their tasks into subtasks using OpenAI API. Only return a maximum of 6 subtasks and nothing else. Use the ChatCompletion endpoint.'
+                },
+                {
+                    'role': 'user',
+                    'content': task.description
+                }
+            ]
+        }
+        response = requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=data)
+        if response.status_code == 200:
+            subtasks = response.json().get('choices')[0].get('message').get('content').strip().split('\n')
+            task.subtasks = '\n'.join(subtasks)
+            db.session.commit()
     return redirect(url_for('index'))
 
 
