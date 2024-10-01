@@ -1,109 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <title>To-Do List</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Include Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
 </head>
-
 <body>
-    <div class="main-container">
-        <h2>To-Do List</h2>
-
-        <!-- Task Input Form Container -->
-        <div class="form-container">
-            <form action="/add" method="post">
-                <input type="text" id="task_title" name="title" placeholder="Enter new task" required>
-                <button class="add-task-button" type="submit">ADD TASK</button>
+    <h1>Task Manager</h1>
+    <form action="/add" method="post">
+        <input type="text" name="title" placeholder="Task Title" required>
+        <button type="submit">Add Task</button>
+    </form>
+    <ul>
+        {% for task in tasks %}
+        <li>
+            <form action="/update_description/{{ task.id }}" method="post">
+                <textarea name="description" placeholder="Task Description">{{ task.description }}</textarea>
+                <button type="submit">Update Description</button>
             </form>
-        </div>
-
-        <!-- Task List -->
-        <ul class="task-list">
-            {% for task in tasks %}
-            <!-- Task Item with Divider -->
-            <div class="task-divider">
-                <li class="task-item">
-                    <div class="task-header">
-                        <!-- Add the 'completed' class if task.completed is True -->
-                        <span class="task-text {% if task.completed %}completed{% endif %}">
-                            {{ task.title }}
-                        </span>
-                        </div>
-                        <!-- Action Buttons Aligned in a Row -->
-                        <div class="task-actions">
-                            <!-- Complete Button -->
-                            <form action="/complete/{{ task.id }}" method="get" class="inline-form">
-                                <button type="submit" class="task-btn complete-btn">
-                                    <i class="fa fa-check"></i>
-                                </button>
-                            </form>
-
-                            <!-- Delete Button -->
-                            <form action="/delete/{{ task.id }}" method="post" class="inline-form">
-                                <button type="submit" class="task-btn delete-btn">
-                                    <i class="fa fa-times"></i>
-                                </button>
-                            </form>
-
-                            <!-- Toggle Up/Down Arrow -->
-                            <span class="toggle-arrow" onclick="toggleDescription({{ task.id }});">
-                                <i id="arrow-{{ task.id }}" class="fas fa-chevron-down"></i>
-                            </span>
-                        </div>
-
-
-                        <!-- Collapsible Task Breakdown Section -->
-                        <div id="description-{{ task.id }}" class="task-breakdown-container" style="display: none;">
-                            <!-- Textarea with AI Magic Button -->
-                            <div class="textarea-wrapper">
-                                <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
-                                    oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
-                                    ✨
-                                </button>
-                            </div>
-
-                        </div>
-                </li>
-            </div>
-            {% endfor %}
-        </ul>
-    </div>
-
-    <!-- Custom JavaScript for Collapsible Sections -->
-    <script>
-        function toggleDescription(taskId) {
-            const descriptionDiv = document.getElementById(`description-${taskId}`);
-            const arrow = document.getElementById(`arrow-${taskId}`);
-
-            if (descriptionDiv.style.display === 'none') {
-                descriptionDiv.style.display = 'block';
-                arrow.className = "fas fa-chevron-up";  // Up arrow icon
-            } else {
-                descriptionDiv.style.display = 'none';
-                arrow.className = "fas fa-chevron-down";  // Down arrow icon
-            }
-        }
-
-
-        // Auto-resize function for the textarea
-        function autoResize(textarea) {
-            textarea.style.height = 'auto';  // Reset the height to auto to shrink the textarea first
-            textarea.style.height = textarea.scrollHeight + 'px';  // Set the height based on the scroll height
-        }
-
-        // Ensure all textareas are adjusted when the page loads (in case of pre-filled content)
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.description-textarea').forEach(textarea => {
-                autoResize(textarea);
-            });
-        });
-    </script>
+            <form action="/delete/{{ task.id }}" method="post">
+                <button type="submit">Delete Task</button>
+            </form>
+            <form action="/complete/{{ task.id }}" method="get">
+                <button type="submit">{{ 'Complete' if not task.completed else 'Incomplete' }}</button>
+            </form>
+            <form action="/generate_subtasks/{{ task.id }}" method="post">
+                <button type="submit" class="ai-button">Generate Subtasks</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
 </body>
-
 </html>
