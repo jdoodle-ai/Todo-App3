@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+import os
+import requests
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -57,6 +59,39 @@ def complete_task(task_id):
     if task:
         task.completed = not task.completed  # Toggle the completed status
         db.session.commit()
+    return redirect(url_for('index'))
+
+
+
+
+
+@app.route('/generate_subtasks/<int:task_id>', methods=['POST'])
+def generate_subtasks(task_id):
+    task = Task.query.get(task_id)
+    if task:
+        api_key = os.getenv('OPENAI_API_KEY')
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json'
+        }
+        data = {
+            'model': 'gpt-4o',
+            'messages': [
+                {
+                    'role': 'system',
+                    'content': 'You are an AI assistant that generates subtasks for a given task title.'
+                },
+                {
+                    'role': 'user',
+                    'content': f'Generate up to 6 subtasks for the task titled '{task.title}'.'
+                }
+            ]
+        }
+        response = requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=data)
+        if response.status_code == 200:
+            subtasks = response.json().get('choices', [{}])[0].get('message', {}).get('content', 'No subtasks generated')
+            task.description += f'\n\nSubtasks:\n{subtasks}'
+            db.session.commit()
     return redirect(url_for('index'))
 
 
