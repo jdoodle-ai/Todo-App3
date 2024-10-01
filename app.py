@@ -15,6 +15,7 @@ class Task(db.Model):
     title = db.Column(db.String(200), nullable=False)
     completed = db.Column(db.Boolean, default=False)
     description = db.Column(db.Text, default="")  # New field to store markdown text
+    subtasks = db.Column(db.JSON, default=[])  # New field to store subtasks
 
 
 # Route for the homepage
