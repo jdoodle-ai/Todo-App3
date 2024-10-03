@@ -9,7 +9,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tasks.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database
-db = SQLAlchemy(app)
+db = SQLAlchemy()
+db.init_app(app)
 
 # Set up OpenAI API key
 openai.api_key = os.getenv('OPENAI_API_KEY')
