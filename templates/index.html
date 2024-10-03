@@ -27,7 +27,7 @@
             {% for task in tasks %}
             <!-- Task Item with Divider -->
             <div class="task-divider">
-                <li class="task-item">
+                <li class="task-item" id="task-{{ task.id }}">
                     <div class="task-header">
                         <!-- Add the 'completed' class if task.completed is True -->
                         <span class="task-text {% if task.completed %}completed{% endif %}">
@@ -63,7 +63,7 @@
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
+                                <button type="button" class="ai-button" onclick="generateBreakdown({{ task.id }})">
                                     ✨
                                 </button>
                             </div>
@@ -90,7 +90,6 @@
             }
         }
 
-
         // Auto-resize function for the textarea
         function autoResize(textarea) {
             textarea.style.height = 'auto';  // Reset the height to auto to shrink the textarea first
@@ -103,6 +102,32 @@
                 autoResize(textarea);
             });
         });
+
+        function generateBreakdown(taskId) {
+            const button = document.querySelector(`#task-${taskId} .ai-button`);
+            const textarea = document.querySelector(`#textarea-${taskId}`);
+            
+            button.disabled = true;
+            button.innerHTML = '⌛'; // Loading indicator
+            
+            fetch(`/generate_breakdown/${taskId}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        textarea.value = data.breakdown;
+                        autoResize(textarea);
+                    } else {
+                        alert('Error generating breakdown: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error);
+                })
+                .finally(() => {
+                    button.disabled = false;
+                    button.innerHTML = '✨';
+                });
+        }
     </script>
 </body>
 
