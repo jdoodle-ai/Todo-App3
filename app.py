@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from openai_utils import generate_task_description
+import os
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -41,6 +43,18 @@ def update_description(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/generate_description/<int:task_id>', methods=['POST'])
+def generate_description(task_id):
+    task = Task.query.get(task_id)
+    if task:
+        try:
+            generated_description = generate_task_description(task.title)
+            task.description = generated_description
+            db.session.commit()
+            return jsonify({'description': generated_description}), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    return jsonify({'error': 'Task not found'}), 404
 
 # Route to delete a task
 @app.route('/delete/<int:task_id>', methods=['POST'])
@@ -58,10 +72,6 @@ def complete_task(task_id):
         task.completed = not task.completed  # Toggle the completed status
         db.session.commit()
     return redirect(url_for('index'))
-
-
-
-
 
 if __name__ == '__main__':
     with app.app_context():
