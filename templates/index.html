@@ -8,6 +8,7 @@
     <!-- Include Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body>
@@ -63,7 +64,7 @@
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
+                                <button type="button" class="ai-button" onclick="generateDescription({{ task.id }})">
                                     ✨
                                 </button>
                             </div>
@@ -103,6 +104,24 @@
                 autoResize(textarea);
             });
         });
+
+        function generateDescription(taskId) {
+            $.ajax({
+                url: `/generate_description/${taskId}`,
+                type: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        $(`#textarea-${taskId}`).val(response.description);
+                        autoResize($(`#textarea-${taskId}`)[0]);
+                    } else {
+                        alert('Failed to generate description. Please try again.');
+                    }
+                },
+                error: function() {
+                    alert('An error occurred. Please try again later.');
+                }
+            });
+        }
     </script>
 </body>
 
