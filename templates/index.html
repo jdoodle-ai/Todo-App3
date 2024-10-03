@@ -63,7 +63,7 @@
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
+                                <button type="button" class="ai-button" onclick="generateBreakdown({{ task.id }})">
                                     ✨
                                 </button>
                             </div>
@@ -90,7 +90,6 @@
             }
         }
 
-
         // Auto-resize function for the textarea
         function autoResize(textarea) {
             textarea.style.height = 'auto';  // Reset the height to auto to shrink the textarea first
@@ -103,6 +102,26 @@
                 autoResize(textarea);
             });
         });
+
+        function generateBreakdown(taskId) {
+            fetch(`/generate_breakdown/${taskId}`, {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else {
+                    const textarea = document.getElementById(`textarea-${taskId}`);
+                    textarea.value = data.breakdown;
+                    autoResize(textarea);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while generating the breakdown.');
+            });
+        }
     </script>
 </body>
 
