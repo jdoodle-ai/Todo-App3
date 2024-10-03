@@ -63,7 +63,7 @@
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
+                                <button type="button" class="ai-button" onclick="generateBreakdown({{ task.id }})">
                                     ✨
                                 </button>
                             </div>
@@ -90,7 +90,6 @@
             }
         }
 
-
         // Auto-resize function for the textarea
         function autoResize(textarea) {
             textarea.style.height = 'auto';  // Reset the height to auto to shrink the textarea first
@@ -103,6 +102,37 @@
                 autoResize(textarea);
             });
         });
+
+        function generateBreakdown(taskId) {
+            const textarea = document.getElementById(`textarea-${taskId}`);
+            const aiButton = textarea.nextElementSibling;
+            
+            // Disable the button and show loading state
+            aiButton.disabled = true;
+            aiButton.innerHTML = '🔄';
+            
+            fetch(`/generate_breakdown/${taskId}`, {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    textarea.value = data.breakdown;
+                    autoResize(textarea);
+                } else {
+                    alert('Failed to generate breakdown: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while generating the breakdown.');
+            })
+            .finally(() => {
+                // Re-enable the button and restore original text
+                aiButton.disabled = false;
+                aiButton.innerHTML = '✨';
+            });
+        }
     </script>
 </body>
 
