@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for
+import os
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import openai
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -9,13 +11,15 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Initialize the database
 db = SQLAlchemy(app)
 
+# Set up OpenAI API
+openai.api_key = os.getenv('OPENAI_API_KEY')
+
 # Create a Task model with description field
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     completed = db.Column(db.Boolean, default=False)
     description = db.Column(db.Text, default="")  # New field to store markdown text
-
 
 # Route for the homepage
 @app.route('/')
@@ -41,7 +45,6 @@ def update_description(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
-
 # Route to delete a task
 @app.route('/delete/<int:task_id>', methods=['POST'])
 def delete_task(task_id):
@@ -59,9 +62,25 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/generate_description', methods=['POST'])
+def generate_description():
+    task_title = request.json.get('title')
+    if not task_title:
+        return jsonify({'error': 'No task title provided'}), 400
 
-
-
+    try:
+        response = openai.Completion.create(
+            engine="text-davinci-002",
+            prompt=f"Generate a 2-3 sentence task breakdown for: {task_title}",
+            max_tokens=100,
+            n=1,
+            stop=None,
+            temperature=0.7,
+        )
+        description = response.choices[0].text.strip()
+        return jsonify({'description': description})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context():
