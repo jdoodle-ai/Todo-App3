@@ -1,5 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import openai
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -8,6 +16,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database
 db = SQLAlchemy(app)
+
+# Initialize rate limiter
+limiter = Limiter(app, key_func=get_remote_address)
+
+# Set up OpenAI API
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Create a Task model with description field
 class Task(db.Model):
@@ -59,9 +73,31 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/generate_description/<int:task_id>', methods=['POST'])
+@limiter.limit("5 per minute")
+def generate_description(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
 
-
-
+    try:
+        # Call OpenAI API
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that provides brief task breakdowns."},
+                {"role": "user", "content": f"Provide a 2-3 sentence breakdown of the task: {task.title}"}
+            ]
+        )
+        
+        # Extract and save the generated description
+        generated_description = response.choices[0].message['content'].strip()
+        task.description = generated_description
+        db.session.commit()
+        
+        return jsonify({"description": generated_description})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context():

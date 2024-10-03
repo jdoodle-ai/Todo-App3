@@ -63,7 +63,7 @@
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
+                                <button type="button" class="ai-button" onclick="generateDescription({{ task.id }})">
                                     ✨
                                 </button>
                             </div>
@@ -103,6 +103,32 @@
                 autoResize(textarea);
             });
         });
+
+        function generateDescription(taskId) {
+            const textarea = document.getElementById(`textarea-${taskId}`);
+            const aiButton = textarea.nextElementSibling;
+            
+            aiButton.disabled = true;
+            aiButton.textContent = '...';
+
+            fetch(`/generate_description/${taskId}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                    } else {
+                        textarea.value = data.description;
+                        autoResize(textarea);
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error);
+                })
+                .finally(() => {
+                    aiButton.disabled = false;
+                    aiButton.textContent = '✨';
+                });
+        }
     </script>
 </body>
 
