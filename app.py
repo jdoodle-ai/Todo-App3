@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for
+import os
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import openai
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -9,13 +11,16 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Initialize the database
 db = SQLAlchemy(app)
 
+# Set up OpenAI API key
+openai.api_key = os.environ.get('OPENAI_API_KEY')
+
 # Create a Task model with description field
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     completed = db.Column(db.Boolean, default=False)
-    description = db.Column(db.Text, default="")  # New field to store markdown text
-
+    description = db.Column(db.Text, default="")  # Field to store markdown text
+    ai_generated = db.Column(db.Boolean, default=False)  # New field to indicate AI-generated content
 
 # Route for the homepage
 @app.route('/')
@@ -38,9 +43,9 @@ def update_description(task_id):
     task = Task.query.get(task_id)
     if task:
         task.description = request.form.get('description')
+        task.ai_generated = False  # Reset AI-generated flag when manually updated
         db.session.commit()
     return redirect(url_for('index'))
-
 
 # Route to delete a task
 @app.route('/delete/<int:task_id>', methods=['POST'])
@@ -59,9 +64,29 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/generate_breakdown/<int:task_id>', methods=['POST'])
+def generate_breakdown(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({'error': 'Task not found'}), 404
 
-
-
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that generates task breakdowns."},
+                {"role": "user", "content": f"Generate a 2-3 sentence breakdown for the task: {task.title}"}
+            ]
+        )
+        breakdown = response.choices[0].message['content'].strip()
+        
+        task.description = breakdown
+        task.ai_generated = True
+        db.session.commit()
+        
+        return jsonify({'description': breakdown})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context():
