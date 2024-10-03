@@ -67,7 +67,7 @@
                                     ✨
                                 </button>
                             </div>
-
+                            <button type="button" class="save-btn" onclick="saveDescription({{ task.id }})">Save</button>
                         </div>
                 </li>
             </div>
@@ -104,23 +104,36 @@
         });
 
         function generateBreakdown(taskId) {
-            fetch(`/generate_breakdown/${taskId}`, {
+            fetch(`/generate_breakdown/${taskId}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.breakdown) {
+                        document.getElementById(`textarea-${taskId}`).value = data.breakdown;
+                        autoResize(document.getElementById(`textarea-${taskId}`));
+                    } else {
+                        console.error('Error generating breakdown:', data.error);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function saveDescription(taskId) {
+            const description = document.getElementById(`textarea-${taskId}`).value;
+            fetch(`/update_description/${taskId}`, {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `description=${encodeURIComponent(description)}`
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert('Error: ' + data.error);
+            .then(response => {
+                if (response.ok) {
+                    console.log('Description saved successfully');
                 } else {
-                    const textarea = document.getElementById(`textarea-${taskId}`);
-                    textarea.value = data.breakdown;
-                    autoResize(textarea);
+                    console.error('Failed to save description');
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while generating the breakdown.');
-            });
+            .catch(error => console.error('Error:', error));
         }
     </script>
 </body>
