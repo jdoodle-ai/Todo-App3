@@ -8,6 +8,7 @@
     <!-- Include Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body>
@@ -63,7 +64,7 @@
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
+                                <button type="button" class="ai-button" onclick="generateBreakdown({{ task.id }})">
                                     ✨
                                 </button>
                             </div>
@@ -103,6 +104,24 @@
                 autoResize(textarea);
             });
         });
+
+        function generateBreakdown(taskId) {
+            $.ajax({
+                url: `/generate_breakdown/${taskId}`,
+                type: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        $(`#textarea-${taskId}`).val(response.breakdown);
+                        autoResize($(`#textarea-${taskId}`)[0]);
+                    } else {
+                        alert('Error generating breakdown');
+                    }
+                },
+                error: function() {
+                    alert('Error communicating with the server');
+                }
+            });
+        }
     </script>
 </body>
 
