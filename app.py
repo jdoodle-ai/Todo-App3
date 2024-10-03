@@ -91,7 +91,7 @@ def generate_description(task_id):
 
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that provides brief task breakdowns."},
                 {"role": "user", "content": f"Provide a 2-3 sentence breakdown of how to complete this task: {task.title}"}
