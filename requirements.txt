@@ -1,2 +1,5 @@
 Flask==2.1.2
 Flask-SQLAlchemy==2.5.1
+openai==0.27.0
+Flask-Limiter==2.6.1
+Flask-Caching==2.0.2
