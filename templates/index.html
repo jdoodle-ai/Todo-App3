@@ -106,23 +106,34 @@
 
         // Function to generate description using GPT-4
         function generateDescription(taskId) {
+            const textarea = document.getElementById(`textarea-${taskId}`);
+            const aiButton = textarea.nextElementSibling;
+
+            // Disable the AI button and show loading state
+            aiButton.disabled = true;
+            aiButton.textContent = '⏳';
+
             fetch(`/generate_description/${taskId}`, {
-                method: 'POST'
+                method: 'POST',
             })
             .then(response => response.json())
             .then(data => {
-                if (data.description) {
-                    const textarea = document.getElementById(`textarea-${taskId}`);
+                if (data.error) {
+                    console.error('Error:', data.error);
+                    textarea.value = 'An error occurred while generating the description.';
+                } else {
                     textarea.value = data.description;
                     autoResize(textarea);
-                } else if (data.error) {
-                    console.error('Error:', data.error);
-                    alert('Failed to generate description. Please try again later.');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again later.');
+                textarea.value = 'An error occurred while generating the description.';
+            })
+            .finally(() => {
+                // Re-enable the AI button and restore its original text
+                aiButton.disabled = false;
+                aiButton.textContent = '✨';
             });
         }
     </script>
