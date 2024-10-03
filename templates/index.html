@@ -90,6 +90,7 @@
             }
         }
 
+
         // Auto-resize function for the textarea
         function autoResize(textarea) {
             textarea.style.height = 'auto';  // Reset the height to auto to shrink the textarea first
@@ -103,31 +104,25 @@
             });
         });
 
+        // Function to generate description using GPT-4
         function generateDescription(taskId) {
-            const textarea = document.getElementById(`textarea-${taskId}`);
-            const aiButton = textarea.nextElementSibling;
-            aiButton.disabled = true;
-            aiButton.textContent = 'Loading...';
-
             fetch(`/generate_description/${taskId}`, {
-                method: 'POST',
+                method: 'POST'
             })
             .then(response => response.json())
             .then(data => {
-                if (data.error) {
-                    alert('Error: ' + data.error);
-                } else {
+                if (data.description) {
+                    const textarea = document.getElementById(`textarea-${taskId}`);
                     textarea.value = data.description;
                     autoResize(textarea);
+                } else if (data.error) {
+                    console.error('Error:', data.error);
+                    alert('Failed to generate description. Please try again later.');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while generating the description.');
-            })
-            .finally(() => {
-                aiButton.disabled = false;
-                aiButton.textContent = '✨';
+                alert('An error occurred. Please try again later.');
             });
         }
     </script>
