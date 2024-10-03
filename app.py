@@ -1,5 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import openai
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -8,6 +14,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database
 db = SQLAlchemy(app)
+
+# Set up OpenAI API client
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Create a Task model with description field
 class Task(db.Model):
@@ -59,9 +68,29 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
-
-
-
+@app.route('/generate_breakdown/<int:task_id>', methods=['POST'])
+def generate_breakdown(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+    
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that generates task breakdowns."},
+                {"role": "user", "content": f"Generate a 2-3 sentence breakdown for the task: {task.title}"}
+            ]
+        )
+        breakdown = response.choices[0].message['content'].strip()
+        
+        task.description = breakdown
+        db.session.commit()
+        
+        return jsonify({"success": True, "breakdown": breakdown})
+    except Exception as e:
+        app.logger.error(f"Error generating breakdown: {str(e)}")
+        return jsonify({"error": "Failed to generate breakdown"}), 500
 
 if __name__ == '__main__':
     with app.app_context():
