@@ -1,5 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import openai
+from dotenv import load_dotenv
+import os
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -8,6 +11,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database
 db = SQLAlchemy(app)
+
+# Load environment variables
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Create a Task model with description field
 class Task(db.Model):
@@ -59,9 +66,29 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/generate_breakdown/<int:task_id>', methods=['POST'])
+def generate_breakdown(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
 
-
-
+    try:
+        response = openai.Completion.create(
+            engine="gpt-4-mini",
+            prompt=f"Break down the following task into 3-8 steps:\n{task.title}",
+            max_tokens=150,
+            n=1,
+            stop=None,
+            temperature=0.7,
+        )
+        breakdown = response.choices[0].text.strip()
+        
+        task.description = breakdown
+        db.session.commit()
+        
+        return jsonify({"success": True, "breakdown": breakdown})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context():

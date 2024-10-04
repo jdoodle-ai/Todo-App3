@@ -27,7 +27,7 @@
             {% for task in tasks %}
             <!-- Task Item with Divider -->
             <div class="task-divider">
-                <li class="task-item">
+                <li class="task-item" id="task-{{ task.id }}">
                     <div class="task-header">
                         <!-- Add the 'completed' class if task.completed is True -->
                         <span class="task-text {% if task.completed %}completed{% endif %}">
@@ -66,6 +66,7 @@
                                 <button type="button" class="ai-button">
                                     ✨
                                 </button>
+                                <span class="loading-indicator" style="display: none;">Loading...</span>
                             </div>
 
                         </div>
@@ -101,6 +102,35 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.description-textarea').forEach(textarea => {
                 autoResize(textarea);
+            });
+        });
+
+        document.querySelectorAll('.ai-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const taskId = this.closest('.task-item').id.split('-')[1];
+                const textarea = document.getElementById(`textarea-${taskId}`);
+                const loadingIndicator = this.nextElementSibling;
+                
+                loadingIndicator.style.display = 'inline-block';
+                this.disabled = true;
+
+                fetch(`/generate_breakdown/${taskId}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            textarea.value = data.breakdown;
+                            autoResize(textarea);
+                        } else {
+                            alert('Error generating breakdown: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error: ' + error);
+                    })
+                    .finally(() => {
+                        loadingIndicator.style.display = 'none';
+                        this.disabled = false;
+                    });
             });
         });
     </script>
