@@ -63,11 +63,12 @@
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
+                                <button type="button" class="ai-button" onclick="generateAIBreakdown({{ task.id }})">
                                     ✨
                                 </button>
                             </div>
-
+                            <!-- AI-generated breakdown display area -->
+                            <div id="ai-breakdown-{{ task.id }}" class="ai-breakdown"></div>
                         </div>
                 </li>
             </div>
@@ -75,7 +76,7 @@
         </ul>
     </div>
 
-    <!-- Custom JavaScript for Collapsible Sections -->
+    <!-- Custom JavaScript for Collapsible Sections and AI Breakdown -->
     <script>
         function toggleDescription(taskId) {
             const descriptionDiv = document.getElementById(`description-${taskId}`);
@@ -90,7 +91,6 @@
             }
         }
 
-
         // Auto-resize function for the textarea
         function autoResize(textarea) {
             textarea.style.height = 'auto';  // Reset the height to auto to shrink the textarea first
@@ -103,6 +103,27 @@
                 autoResize(textarea);
             });
         });
+
+        function generateAIBreakdown(taskId) {
+            const breakdownDiv = document.getElementById(`ai-breakdown-${taskId}`);
+            breakdownDiv.innerHTML = 'Generating breakdown...'; // Loading indicator
+
+            fetch(`/generate_breakdown/${taskId}`, {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    breakdownDiv.innerHTML = `Error: ${data.error}`;
+                } else {
+                    breakdownDiv.innerHTML = data.breakdown.replace(/\n/g, '<br>');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                breakdownDiv.innerHTML = 'Failed to generate breakdown. Please try again.';
+            });
+        }
     </script>
 </body>
 
