@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for
+import os
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from openai_utils import generate_subtasks
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -59,9 +61,19 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/generate_subtasks/<int:task_id>', methods=['POST'])
+def generate_ai_subtasks(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({'error': 'Task not found'}), 404
 
-
-
+    try:
+        subtasks = generate_subtasks(task.title)
+        task.description = '\n'.join([f'- {subtask}' for subtask in subtasks])
+        db.session.commit()
+        return jsonify({'success': True, 'description': task.description})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context():
