@@ -27,7 +27,7 @@
             {% for task in tasks %}
             <!-- Task Item with Divider -->
             <div class="task-divider">
-                <li class="task-item" data-task-id="{{ task.id }}">
+                <li class="task-item">
                     <div class="task-header">
                         <!-- Add the 'completed' class if task.completed is True -->
                         <span class="task-text {% if task.completed %}completed{% endif %}">
@@ -63,7 +63,7 @@
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
+                                <button type="button" class="ai-button" onclick="generateAIBreakdown({{ task.id }})">
                                     ✨
                                 </button>
                             </div>
@@ -102,37 +102,51 @@
             document.querySelectorAll('.description-textarea').forEach(textarea => {
                 autoResize(textarea);
             });
-
-            // Add event listener for AI Magic buttons
-            document.querySelectorAll('.ai-button').forEach(button => {
-                button.addEventListener('click', function() {
-                    const taskId = this.closest('.task-item').dataset.taskId;
-                    const textarea = document.querySelector(`#textarea-${taskId}`);
-                    const loadingIndicator = document.createElement('div');
-                    loadingIndicator.className = 'loading-indicator';
-                    loadingIndicator.textContent = 'Generating task breakdown...';
-                    textarea.parentNode.insertBefore(loadingIndicator, textarea.nextSibling);
-
-                    fetch(`/ai_breakdown/${taskId}`, {method: 'POST'})
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.error) {
-                                alert('Error: ' + data.error);
-                            } else {
-                                textarea.value = data.breakdown;
-                                autoResize(textarea);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('An error occurred while generating the task breakdown.');
-                        })
-                        .finally(() => {
-                            loadingIndicator.remove();
-                        });
-                });
-            });
         });
+
+        // Function to generate AI breakdown
+        function generateAIBreakdown(taskId) {
+            fetch(`/ai_breakdown/${taskId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.breakdown) {
+                    const textarea = document.getElementById(`textarea-${taskId}`);
+                    textarea.value = data.breakdown;
+                    autoResize(textarea);
+                    // Update the task description in the database
+                    updateDescription(taskId, data.breakdown);
+                } else if (data.error) {
+                    console.error('Error:', data.error);
+                    alert('An error occurred while generating the breakdown.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while generating the breakdown.');
+            });
+        }
+
+        // Function to update the task description in the database
+        function updateDescription(taskId, description) {
+            fetch(`/update_description/${taskId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `description=${encodeURIComponent(description)}`
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to update description');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating description:', error);
+                alert('Failed to save the updated description.');
+            });
+        }
     </script>
 </body>
 
