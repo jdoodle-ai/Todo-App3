@@ -1,5 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for
+import os
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+import requests
+
+# Load environment variables
+load_dotenv()
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -15,7 +21,6 @@ class Task(db.Model):
     title = db.Column(db.String(200), nullable=False)
     completed = db.Column(db.Boolean, default=False)
     description = db.Column(db.Text, default="")  # New field to store markdown text
-
 
 # Route for the homepage
 @app.route('/')
@@ -41,7 +46,6 @@ def update_description(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
-
 # Route to delete a task
 @app.route('/delete/<int:task_id>', methods=['POST'])
 def delete_task(task_id):
@@ -59,9 +63,44 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+# New route for AI task breakdown
+@app.route('/ai_breakdown/<int:task_id>', methods=['POST'])
+def ai_breakdown(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({'error': 'Task not found'}), 404
 
+    try:
+        subtasks = generate_subtasks(task.title)
+        task.description = '\n'.join([f'- {subtask}' for subtask in subtasks])
+        db.session.commit()
+        return jsonify({'success': True, 'description': task.description})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
+def generate_subtasks(task_title):
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        raise ValueError('OpenAI API key not found in environment variables')
 
+    headers = {
+        'Authorization': f'Bearer {api_key}',
+        'Content-Type': 'application/json'
+    }
+    data = {
+        'model': 'gpt-4',
+        'messages': [
+            {'role': 'system', 'content': 'You are a helpful assistant that breaks down tasks into subtasks.'},
+            {'role': 'user', 'content': f'Break down the following task into 3-8 manageable steps: {task_title}'}
+        ],
+        'max_tokens': 150
+    }
+
+    response = requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=data)
+    response.raise_for_status()
+
+    subtasks = response.json()['choices'][0]['message']['content'].split('\n')
+    return [subtask.strip('- ') for subtask in subtasks if subtask.strip()]
 
 if __name__ == '__main__':
     with app.app_context():

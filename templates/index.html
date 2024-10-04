@@ -63,7 +63,7 @@
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
+                                <button type="button" class="ai-button" onclick="generateSubtasks({{ task.id }})">
                                     ✨
                                 </button>
                             </div>
@@ -90,7 +90,6 @@
             }
         }
 
-
         // Auto-resize function for the textarea
         function autoResize(textarea) {
             textarea.style.height = 'auto';  // Reset the height to auto to shrink the textarea first
@@ -103,6 +102,27 @@
                 autoResize(textarea);
             });
         });
+
+        // Function to generate subtasks using AI
+        function generateSubtasks(taskId) {
+            fetch(`/ai_breakdown/${taskId}`, {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const textarea = document.getElementById(`textarea-${taskId}`);
+                    textarea.value = data.description;
+                    autoResize(textarea);
+                } else {
+                    alert('Error generating subtasks: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while generating subtasks.');
+            });
+        }
     </script>
 </body>
 
