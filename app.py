@@ -1,10 +1,15 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import os
+import openai
 
 # Initialize the Flask app
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tasks.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Configure OpenAI API key
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Initialize the database
 db = SQLAlchemy(app)
@@ -59,9 +64,28 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
-
-
-
+@app.route('/ai_breakdown/<int:task_id>', methods=['POST'])
+def ai_breakdown(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+    
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that breaks down tasks into steps."},
+                {"role": "user", "content": f"Break down this task into 3-8 steps: {task.title}"}
+            ]
+        )
+        breakdown = response.choices[0].message['content']
+        
+        task.description = breakdown
+        db.session.commit()
+        
+        return jsonify({"breakdown": breakdown}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context():

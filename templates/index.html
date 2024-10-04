@@ -27,7 +27,7 @@
             {% for task in tasks %}
             <!-- Task Item with Divider -->
             <div class="task-divider">
-                <li class="task-item">
+                <li class="task-item" id="task-{{ task.id }}">
                     <div class="task-header">
                         <!-- Add the 'completed' class if task.completed is True -->
                         <span class="task-text {% if task.completed %}completed{% endif %}">
@@ -64,7 +64,7 @@
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
                                 <button type="button" class="ai-button">
-                                    ✨
+                                    ✨ <span class="loading-indicator" style="display: none;">⏳</span>
                                 </button>
                             </div>
 
@@ -101,6 +101,38 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.description-textarea').forEach(textarea => {
                 autoResize(textarea);
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const aiButtons = document.querySelectorAll('.ai-button');
+            aiButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const taskId = this.closest('.task-item').id.split('-')[1];
+                    const textarea = document.getElementById(`textarea-${taskId}`);
+                    const loadingIndicator = this.querySelector('.loading-indicator');
+                    
+                    loadingIndicator.style.display = 'inline-block';
+                    this.disabled = true;
+                    
+                    fetch(`/ai_breakdown/${taskId}`, { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                throw new Error(data.error);
+                            }
+                            textarea.value = data.breakdown;
+                            autoResize(textarea);
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('An error occurred while generating the breakdown.');
+                        })
+                        .finally(() => {
+                            loadingIndicator.style.display = 'none';
+                            this.disabled = false;
+                        });
+                });
             });
         });
     </script>
