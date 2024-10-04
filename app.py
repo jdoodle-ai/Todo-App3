@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from utils import generate_task_breakdown
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -59,9 +60,20 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/breakdown/<int:task_id>', methods=['POST'])
+def breakdown_task(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
 
+    breakdown = generate_task_breakdown(task.title)
+    if not breakdown:
+        return jsonify({"error": "Failed to generate breakdown"}), 500
 
+    task.description = breakdown
+    db.session.commit()
 
+    return jsonify({"description": breakdown})
 
 if __name__ == '__main__':
     with app.app_context():
