@@ -1,5 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import os
+from dotenv import load_dotenv
+from openai import OpenAI, APIError
+
+# Load environment variables
+load_dotenv()
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -8,6 +14,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database
 db = SQLAlchemy(app)
+
+# Initialize OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Create a Task model with description field
 class Task(db.Model):
@@ -59,9 +68,27 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
-
-
-
+@app.route('/generate_breakdown/<int:task_id>', methods=['POST'])
+def generate_breakdown(task_id):
+    try:
+        task = Task.query.get(task_id)
+        if task:
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a task breakdown assistant. Create a concise list of maximum 8 steps to complete the given task."},
+                    {"role": "user", "content": f"Break down this task: {task.title}"}
+                ]
+            )
+            breakdown = response.choices[0].message.content
+            task.description = breakdown
+            db.session.commit()
+            return jsonify({"success": True, "breakdown": breakdown})
+        return jsonify({"success": False, "error": "Task not found"}), 404
+    except APIError as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    except Exception as e:
+        return jsonify({"success": False, "error": "An unexpected error occurred"}), 500
 
 if __name__ == '__main__':
     with app.app_context():

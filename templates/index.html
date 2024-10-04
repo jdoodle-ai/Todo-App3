@@ -63,7 +63,7 @@
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
+                                <button type="button" class="ai-button" onclick="generateBreakdown({{ task.id }})">
                                     ✨
                                 </button>
                             </div>
@@ -103,6 +103,20 @@
                 autoResize(textarea);
             });
         });
+
+        function generateBreakdown(taskId) {
+            fetch(`/generate_breakdown/${taskId}`, {method: 'POST'})
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById(`textarea-${taskId}`).value = data.breakdown;
+                        autoResize(document.getElementById(`textarea-${taskId}`));
+                    } else {
+                        alert('Failed to generate breakdown. Please try again.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
     </script>
 </body>
 
