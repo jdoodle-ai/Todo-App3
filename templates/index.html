@@ -8,6 +8,16 @@
     <!-- Include Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .loading {
+            display: none;
+            /* Add loading animation styles */
+        }
+        .error-message {
+            color: red;
+            display: none;
+        }
+    </style>
 </head>
 
 <body>
@@ -63,11 +73,12 @@
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
+                                <button type="button" class="ai-button" onclick="generateBreakdown({{ task.id }})">
                                     ✨
                                 </button>
                             </div>
-
+                            <div class="loading" id="loading-{{ task.id }}">Loading...</div>
+                            <div class="error-message" id="error-{{ task.id }}"></div>
                         </div>
                 </li>
             </div>
@@ -103,6 +114,32 @@
                 autoResize(textarea);
             });
         });
+
+        function generateBreakdown(taskId) {
+            const textarea = document.getElementById(`textarea-${taskId}`);
+            const loadingDiv = document.getElementById(`loading-${taskId}`);
+            const errorDiv = document.getElementById(`error-${taskId}`);
+
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+
+            fetch(`/generate_breakdown/${taskId}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    textarea.value = data.breakdown;
+                    autoResize(textarea);
+                })
+                .catch(error => {
+                    errorDiv.textContent = `Error: ${error.message}`;
+                    errorDiv.style.display = 'block';
+                })
+                .finally(() => {
+                    loadingDiv.style.display = 'none';
+                });
+        }
     </script>
 </body>
 
