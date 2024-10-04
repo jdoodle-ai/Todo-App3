@@ -27,7 +27,7 @@
             {% for task in tasks %}
             <!-- Task Item with Divider -->
             <div class="task-divider">
-                <li class="task-item">
+                <li class="task-item" data-task-id="{{ task.id }}">
                     <div class="task-header">
                         <!-- Add the 'completed' class if task.completed is True -->
                         <span class="task-text {% if task.completed %}completed{% endif %}">
@@ -101,6 +101,36 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.description-textarea').forEach(textarea => {
                 autoResize(textarea);
+            });
+
+            // Add event listener for AI Magic buttons
+            document.querySelectorAll('.ai-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const taskId = this.closest('.task-item').dataset.taskId;
+                    const textarea = document.querySelector(`#textarea-${taskId}`);
+                    const loadingIndicator = document.createElement('div');
+                    loadingIndicator.className = 'loading-indicator';
+                    loadingIndicator.textContent = 'Generating task breakdown...';
+                    textarea.parentNode.insertBefore(loadingIndicator, textarea.nextSibling);
+
+                    fetch(`/ai_breakdown/${taskId}`, {method: 'POST'})
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                alert('Error: ' + data.error);
+                            } else {
+                                textarea.value = data.breakdown;
+                                autoResize(textarea);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('An error occurred while generating the task breakdown.');
+                        })
+                        .finally(() => {
+                            loadingIndicator.remove();
+                        });
+                });
             });
         });
     </script>
