@@ -63,8 +63,8 @@
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
-                                    ✨
+                                <button type="button" class="ai-button" onclick="requestAIBreakdown({{ task.id }})">
+                                    ✨ <span id="loading-{{ task.id }}" class="loading" style="display: none;">⏳</span>
                                 </button>
                             </div>
 
@@ -103,6 +103,32 @@
                 autoResize(textarea);
             });
         });
+
+        function requestAIBreakdown(taskId) {
+            const textarea = document.getElementById(`textarea-${taskId}`);
+            const loadingIndicator = document.getElementById(`loading-${taskId}`);
+            
+            loadingIndicator.style.display = 'inline';
+            textarea.disabled = true;
+
+            fetch(`/ai_breakdown/${taskId}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        textarea.value = data.breakdown;
+                        autoResize(textarea);
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert("An error occurred: " + error);
+                })
+                .finally(() => {
+                    loadingIndicator.style.display = 'none';
+                    textarea.disabled = false;
+                });
+        }
     </script>
 </body>
 
