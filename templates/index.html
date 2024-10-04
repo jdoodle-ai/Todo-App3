@@ -27,7 +27,7 @@
             {% for task in tasks %}
             <!-- Task Item with Divider -->
             <div class="task-divider">
-                <li class="task-item">
+                <li class="task-item" data-task-id="{{ task.id }}">
                     <div class="task-header">
                         <!-- Add the 'completed' class if task.completed is True -->
                         <span class="task-text {% if task.completed %}completed{% endif %}">
@@ -65,6 +65,7 @@
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
                                 <button type="button" class="ai-button">
                                     ✨
+                                    <span class="loading-indicator" style="display: none;">Loading...</span>
                                 </button>
                             </div>
 
@@ -101,6 +102,37 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.description-textarea').forEach(textarea => {
                 autoResize(textarea);
+            });
+        });
+
+        document.querySelectorAll('.ai-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const taskItem = this.closest('.task-item');
+                const taskId = taskItem.dataset.taskId;
+                const textarea = taskItem.querySelector('.description-textarea');
+                const loadingIndicator = taskItem.querySelector('.loading-indicator');
+                
+                loadingIndicator.style.display = 'inline-block';
+                button.disabled = true;
+
+                fetch(`/breakdown_task/${taskId}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            textarea.value = data.breakdown;
+                            autoResize(textarea);
+                        } else {
+                            alert('Failed to generate breakdown. Please try again.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again.');
+                    })
+                    .finally(() => {
+                        loadingIndicator.style.display = 'none';
+                        button.disabled = false;
+                    });
             });
         });
     </script>
