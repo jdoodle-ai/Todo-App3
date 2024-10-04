@@ -1,5 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import os
+import openai
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -9,13 +15,15 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Initialize the database
 db = SQLAlchemy(app)
 
+# Set up OpenAI API key
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
 # Create a Task model with description field
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     completed = db.Column(db.Boolean, default=False)
-    description = db.Column(db.Text, default="")  # New field to store markdown text
-
+    description = db.Column(db.Text, default="")
 
 # Route for the homepage
 @app.route('/')
@@ -41,7 +49,6 @@ def update_description(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
-
 # Route to delete a task
 @app.route('/delete/<int:task_id>', methods=['POST'])
 def delete_task(task_id):
@@ -59,9 +66,34 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/ai_breakdown/<int:task_id>', methods=['POST'])
+def ai_breakdown(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
 
+    try:
+        breakdown = get_ai_breakdown(task.title)
+        task.description = breakdown
+        db.session.commit()
+        return jsonify({"success": True, "breakdown": breakdown})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-
+def get_ai_breakdown(task_title):
+    prompt = f"Break down the following task into 3-8 manageable chunks: {task_title}"
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4-0613",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that breaks down tasks into manageable chunks."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=150
+        )
+        return response.choices[0].message['content'].strip()
+    except Exception as e:
+        raise Exception(f"Error calling OpenAI API: {str(e)}")
 
 if __name__ == '__main__':
     with app.app_context():
