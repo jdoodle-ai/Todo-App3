@@ -14,6 +14,12 @@
     <div class="main-container">
         <h2>To-Do List</h2>
 
+        <!-- Progress Tracker -->
+        <div class="progress-tracker">
+            <div class="progress-bar" style="width: {{ progress_percentage }}%"></div>
+            <span class="progress-text">{{ completed_tasks }}/{{ total_tasks }} tasks complete</span>
+        </div>
+
         <!-- Task Input Form Container -->
         <div class="form-container">
             <form action="/add" method="post">
@@ -102,7 +108,19 @@
             document.querySelectorAll('.description-textarea').forEach(textarea => {
                 autoResize(textarea);
             });
+            updateProgressBarColor({{ progress_percentage }});
         });
+
+        function updateProgressBarColor(percentage) {
+            const progressBar = document.querySelector('.progress-bar');
+            if (percentage === 100) {
+                progressBar.style.backgroundColor = '#4CAF50'; // Green
+            } else if (percentage === 0) {
+                progressBar.style.backgroundColor = '#F44336'; // Red
+            } else {
+                progressBar.style.backgroundColor = '#FFA500'; // Orange for in-between
+            }
+        }
     </script>
 </body>
 

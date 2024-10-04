@@ -21,7 +21,13 @@ class Task(db.Model):
 @app.route('/')
 def index():
     tasks = Task.query.all()
-    return render_template('index.html', tasks=tasks)
+    total_tasks = len(tasks)
+    completed_tasks = sum(1 for task in tasks if task.completed)
+    progress_percentage = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+    return render_template('index.html', tasks=tasks, 
+                           total_tasks=total_tasks, 
+                           completed_tasks=completed_tasks, 
+                           progress_percentage=progress_percentage)
 
 # Route to add a new task
 @app.route('/add', methods=['POST'])
