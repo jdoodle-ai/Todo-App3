@@ -14,6 +14,13 @@
     <div class="main-container">
         <h2>To-Do List</h2>
 
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-bar" style="width: {{ progress_percentage }}%;" aria-valuenow="{{ progress_percentage }}" aria-valuemin="0" aria-valuemax="100" role="progressbar">
+                <span class="progress-text">{{ '%0.1f'| format(progress_percentage) }}% Complete</span>
+            </div>
+        </div>
+
         <!-- Task Input Form Container -->
         <div class="form-container">
             <form action="/add" method="post">
