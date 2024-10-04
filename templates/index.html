@@ -56,18 +56,16 @@
                             </span>
                         </div>
 
-
                         <!-- Collapsible Task Breakdown Section -->
                         <div id="description-{{ task.id }}" class="task-breakdown-container" style="display: none;">
                             <!-- Textarea with AI Magic Button -->
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
+                                <button type="button" class="ai-button" onclick="generateAIBreakdown({{ task.id }})">
                                     ✨
                                 </button>
                             </div>
-
                         </div>
                 </li>
             </div>
@@ -90,7 +88,6 @@
             }
         }
 
-
         // Auto-resize function for the textarea
         function autoResize(textarea) {
             textarea.style.height = 'auto';  // Reset the height to auto to shrink the textarea first
@@ -103,6 +100,30 @@
                 autoResize(textarea);
             });
         });
+
+        // Function to generate AI breakdown
+        function generateAIBreakdown(taskId) {
+            const textarea = document.getElementById(`textarea-${taskId}`);
+            textarea.value = "Generating AI breakdown...";
+            autoResize(textarea);
+
+            fetch(`/ai_breakdown/${taskId}`, {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    textarea.value = data.breakdown;
+                    autoResize(textarea);
+                } else {
+                    textarea.value = "Error: " + data.error;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                textarea.value = "Error generating breakdown. Please try again.";
+            });
+        }
     </script>
 </body>
 
