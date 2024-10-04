@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import os
+import requests
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -59,8 +61,39 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+# New route to generate subtasks using OpenAI API
+@app.route('/generate_subtasks/<int:task_id>', methods=['POST'])
+def generate_subtasks(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({'error': 'Task not found'}), 404
 
+    openai_api_key = os.environ.get('OPENAI_API_KEY')
+    if not openai_api_key:
+        return jsonify({'error': 'OpenAI API key not configured'}), 500
 
+    headers = {
+        'Authorization': f'Bearer {openai_api_key}',
+        'Content-Type': 'application/json'
+    }
+    data = {
+        'model': 'gpt-4o-mini',
+        'messages': [
+            {'role': 'system', 'content': 'You are a helpful assistant.'},
+            {'role': 'user', 'content': f'Break down the task "{task.title}" into 3-8 manageable steps.'}
+        ]
+    }
+
+    try:
+        response = requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=data)
+        response.raise_for_status()
+        result = response.json()
+        subtasks = result['choices'][0]['message']['content'].strip()
+        task.description = subtasks
+        db.session.commit()
+        return jsonify({'subtasks': subtasks}), 200
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': str(e)}), 500
 
 
 if __name__ == '__main__':

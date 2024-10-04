@@ -63,7 +63,7 @@
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
+                                <button type="button" class="ai-button" onclick="generateSubtasks({{ task.id }});">
                                     ✨
                                 </button>
                             </div>
@@ -103,6 +103,30 @@
                 autoResize(textarea);
             });
         });
+
+        // Function to generate subtasks using OpenAI API
+        function generateSubtasks(taskId) {
+            fetch(`/generate_subtasks/${taskId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.subtasks) {
+                    const textarea = document.getElementById(`textarea-${taskId}`);
+                    textarea.value = data.subtasks;
+                    autoResize(textarea);
+                } else if (data.error) {
+                    alert(`Error: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while generating subtasks.');
+            });
+        }
     </script>
 </body>
 
