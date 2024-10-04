@@ -8,7 +8,6 @@
     <!-- Include Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body>
@@ -106,21 +105,20 @@
         });
 
         function generateBreakdown(taskId) {
-            $.ajax({
-                url: `/generate_breakdown/${taskId}`,
-                type: 'POST',
-                success: function(response) {
-                    if (response.success) {
-                        $(`#textarea-${taskId}`).val(response.breakdown);
-                        autoResize($(`#textarea-${taskId}`)[0]);
-                    } else {
-                        alert('Error generating breakdown');
-                    }
-                },
-                error: function() {
-                    alert('Error communicating with the server');
+            fetch(`/generate_breakdown/${taskId}`, {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const textarea = document.getElementById(`textarea-${taskId}`);
+                    textarea.value = data.breakdown;
+                    autoResize(textarea);
+                } else {
+                    console.error('Error generating breakdown:', data.error);
                 }
-            });
+            })
+            .catch(error => console.error('Error:', error));
         }
     </script>
 </body>
