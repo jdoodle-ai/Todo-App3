@@ -14,12 +14,6 @@
     <div class="main-container">
         <h2>To-Do List</h2>
 
-        <!-- Progress Tracker -->
-        <div class="progress-tracker">
-            <div class="progress-bar" style="width: {{ completion_percentage }}%; background-color: {{ 'green' if completion_percentage == 100 else 'red' if completion_percentage == 0 else 'linear-gradient(to right, red, green)' }}"></div>
-            <span class="progress-text">{{ "%d%% (%d/%d tasks completed)" | format(completion_percentage, completed_tasks, total_tasks) }}</span>
-        </div>
-
         <!-- Task Input Form Container -->
         <div class="form-container">
             <form action="/add" method="post">
@@ -43,7 +37,7 @@
                         <!-- Action Buttons Aligned in a Row -->
                         <div class="task-actions">
                             <!-- Complete Button -->
-                            <form action="/complete/{{ task.id }}" method="get" class="inline-form">
+                            <form action="/complete/{{ task.id }}" method="post" class="inline-form">
                                 <button type="submit" class="task-btn complete-btn">
                                     <i class="fa fa-check"></i>
                                 </button>
