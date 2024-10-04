@@ -1,5 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import requests
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -59,9 +65,37 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/ai_breakdown/<int:task_id>', methods=['POST'])
+def ai_breakdown(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
 
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return jsonify({"error": "API key not configured"}), 500
 
+    try:
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={
+                "model": "gpt-4-0314",
+                "messages": [
+                    {"role": "system", "content": "You are a helpful task breakdown assistant."},
+                    {"role": "user", "content": f"Break down this task into 3-8 subtasks: {task.title}"}
+                ]
+            }
+        )
+        response.raise_for_status()
+        breakdown = response.json()["choices"][0]["message"]["content"]
 
+        task.description = breakdown
+        db.session.commit()
+
+        return jsonify({"breakdown": breakdown})
+    except requests.RequestException as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context():
