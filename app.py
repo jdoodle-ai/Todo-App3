@@ -1,5 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import os
+from openai_utils import generate_subtasks
+from datetime import datetime, timedelta
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -14,8 +17,9 @@ class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     completed = db.Column(db.Boolean, default=False)
-    description = db.Column(db.Text, default="")  # New field to store markdown text
-
+    description = db.Column(db.Text, default="")
+    subtasks = db.Column(db.Text, default="")
+    last_ai_request = db.Column(db.DateTime)
 
 # Route for the homepage
 @app.route('/')
@@ -41,7 +45,6 @@ def update_description(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
-
 # Route to delete a task
 @app.route('/delete/<int:task_id>', methods=['POST'])
 def delete_task(task_id):
@@ -59,9 +62,24 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/generate_subtasks/<int:task_id>', methods=['POST'])
+def generate_subtasks_route(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({'error': 'Task not found'}), 404
 
+    # Check if the last AI request was made less than 1 minute ago
+    if task.last_ai_request and datetime.utcnow() - task.last_ai_request < timedelta(minutes=1):
+        return jsonify({'error': 'Please wait before making another AI request'}), 429
 
-
+    try:
+        subtasks = generate_subtasks(task.title)
+        task.subtasks = '\n'.join(subtasks)
+        task.last_ai_request = datetime.utcnow()
+        db.session.commit()
+        return jsonify({'subtasks': subtasks})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context():
