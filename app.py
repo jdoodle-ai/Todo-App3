@@ -1,5 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from ai_utils import generate_task_breakdown
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import os
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -8,6 +12,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database
 db = SQLAlchemy(app)
+
+# Initialize rate limiter
+limiter = Limiter(app, key_func=get_remote_address)
 
 # Create a Task model with description field
 class Task(db.Model):
@@ -59,9 +66,20 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
-
-
-
+@app.route('/ai_breakdown/<int:task_id>', methods=['POST'])
+@limiter.limit("5 per minute")
+def ai_breakdown(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+    
+    try:
+        breakdown = generate_task_breakdown(task.title, task.description)
+        task.description = breakdown
+        db.session.commit()
+        return jsonify({"success": True, "breakdown": breakdown})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context():
