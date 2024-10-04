@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 
 # Initialize the Flask app
@@ -41,6 +41,14 @@ def update_description(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/clear_description/<int:task_id>', methods=['POST'])
+def clear_description(task_id):
+    task = Task.query.get(task_id)
+    if task:
+        task.description = ""
+        db.session.commit()
+        return jsonify({"success": True})
+    return jsonify({"success": False}), 404
 
 # Route to delete a task
 @app.route('/delete/<int:task_id>', methods=['POST'])

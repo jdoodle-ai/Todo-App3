@@ -59,12 +59,15 @@
 
                         <!-- Collapsible Task Breakdown Section -->
                         <div id="description-{{ task.id }}" class="task-breakdown-container" style="display: none;">
-                            <!-- Textarea with AI Magic Button -->
+                            <!-- Textarea with AI Magic Button and Clear Description Button -->
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
                                 <button type="button" class="ai-button">
                                     ✨
+                                </button>
+                                <button type="button" class="clear-description-button" onclick="clearDescription({{ task.id }})">
+                                    🗑️
                                 </button>
                             </div>
 
@@ -103,6 +106,21 @@
                 autoResize(textarea);
             });
         });
+
+        function clearDescription(taskId) {
+            if (confirm('Are you sure you want to clear this description?')) {
+                fetch(`/clear_description/${taskId}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById(`textarea-${taskId}`).value = '';
+                            autoResize(document.getElementById(`textarea-${taskId}`));
+                        } else {
+                            alert('Failed to clear description. Please try again.');
+                        }
+                    });
+            }
+        }
     </script>
 </body>
 
