@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import openai
+import os
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -8,6 +10,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database
 db = SQLAlchemy(app)
+
+# Set up OpenAI API
+openai.api_key = os.environ.get('OPENAI_API_KEY')
 
 # Create a Task model with description field
 class Task(db.Model):
@@ -59,9 +64,28 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/ai_breakdown/<int:task_id>', methods=['POST'])
+def ai_breakdown(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({'error': 'Task not found'}), 404
 
+    try:
+        breakdown = generate_task_breakdown(task.title)
+        task.description = breakdown
+        db.session.commit()
+        return jsonify({'success': True, 'breakdown': breakdown})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-
+def generate_task_breakdown(task_title):
+    prompt = f"Break down the following task into 3-8 manageable steps: {task_title}"
+    response = openai.ChatCompletion.create(
+        model="gpt-4-mini",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=150
+    )
+    return response.choices[0].message.content
 
 if __name__ == '__main__':
     with app.app_context():
