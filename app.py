@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import requests
+import os
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -39,8 +41,8 @@ def update_description(task_id):
     if task:
         task.description = request.form.get('description')
         db.session.commit()
-    return redirect(url_for('index'))
-
+        return jsonify({'success': True})
+    return jsonify({'error': 'Task not found'}), 404
 
 # Route to delete a task
 @app.route('/delete/<int:task_id>', methods=['POST'])
@@ -59,9 +61,47 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/ai_breakdown/<int:task_id>', methods=['POST'])
+def ai_breakdown(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({'error': 'Task not found'}), 404
+    
+    breakdown = generate_task_breakdown(task.title)
+    
+    if breakdown:
+        task.description = breakdown
+        db.session.commit()
+        return jsonify({'success': True, 'breakdown': breakdown})
+    else:
+        return jsonify({'error': 'Failed to generate breakdown'}), 500
 
+def generate_task_breakdown(task_title):
+    api_key = os.environ.get('OPENAI_API_KEY')
+    if not api_key:
+        app.logger.error('OpenAI API key not found')
+        return None
 
+    headers = {
+        'Authorization': f'Bearer {api_key}',
+        'Content-Type': 'application/json'
+    }
+    data = {
+        'model': 'gpt-4',
+        'messages': [
+            {'role': 'system', 'content': 'You are a helpful assistant that breaks down tasks into 3-8 steps.'},
+            {'role': 'user', 'content': f'Break down this task into steps: {task_title}'}
+        ]
+    }
 
+    try:
+        response = requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=data)
+        response.raise_for_status()
+        result = response.json()
+        return result['choices'][0]['message']['content']
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f'OpenAI API request failed: {str(e)}')
+        return None
 
 if __name__ == '__main__':
     with app.app_context():
