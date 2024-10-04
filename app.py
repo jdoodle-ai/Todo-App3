@@ -59,8 +59,14 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
-
-
+# New route to clear description
+@app.route('/clear_description/<int:task_id>', methods=['POST'])
+def clear_description(task_id):
+    task = Task.query.get(task_id)
+    if task:
+        task.description = ""
+        db.session.commit()
+    return '', 204  # No content response
 
 
 if __name__ == '__main__':

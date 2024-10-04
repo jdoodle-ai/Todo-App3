@@ -1,201 +1,22 @@
-/* General Body Styling */
-body {
-    background-color: #181D2E;
-    color: #E5EBEA;
-    font-family: 'Roboto', sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-}
+/* Existing styles */
 
-/* Main Container */
-.main-container {
-    background-color: rgba(255, 255, 255, 0.1);
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    width: 600px;
-    max-width: 90%;
-}
-
-/* Task Text with Completed Class */
-.completed {
-    text-decoration: line-through;
-    color: #888888;
-}
-
-/* Title Styling */
-h2 {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-/* Form Styling */
-.form-container {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-input[type="text"] {
-    width: 70%;
-    padding: 10px;
-    border-radius: 8px;
-    border: 2px solid #00A896;
-    background-color: #1C2235;
-    color: #E5EBEA;
-}
-
-input[type="text"]::placeholder {
-    color: #E5EBEA;
-}
-
-/* Add Task Button */
-.add-task-button {
-    background-color: #00A896;
-    color: #181D2E;
+/* Add styles for the clear button */
+.clear-button {
+    background: none;
     border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: bold;
     cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.add-task-button:hover {
-    background-color: #00796B;
-}
-
-/* Task List Styling */
-.task-list {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-}
-
-/* Task Divider */
-.task-divider {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    padding-bottom: 15px;
-    margin-bottom: 15px;
-}
-
-/* Task Item Styling */
-.task-item {
-    display: flex;
-    flex-direction: column; /* Stack child elements vertically */
-    margin-bottom: 15px;
-}
-
-.task-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-}
-
-/* Align Action Buttons in a Horizontal Row */
-.task-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-}
-
-.task-text {
-    flex-grow: 1;
-}
-
-
-/* Collapsible Task Breakdown */
-.task-breakdown-container {
-    background-color: #1C2235;
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 5px;
-}
-
-/* Textarea Styling */
-.description-textarea {
-    width: calc(100% - 20px);
-    height: auto;
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #00A896;
-    border-radius: 8px;
-    background-color: #2B3147;
-    color: #E5EBEA;
-    resize: none;
-    overflow-y: hidden;
-    min-height: 60px;
-}
-
-/* Textarea Wrapper */
-.textarea-wrapper {
-    position: relative;
-}
-
-/* AI Button Inside the Textarea */
-.ai-button {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    background: transparent;
-    color: #00A896;
-    border: none;
-    border-radius: 50%;
+    font-size: 1.2em;
     padding: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    font-size: 20px;
+    position: absolute;
+    right: 40px;
+    top: 5px;
 }
 
-.ai-button:hover {
-    background-color: rgba(0, 168, 150, 0.2);
+.clear-button:hover {
+    opacity: 0.7;
 }
 
-/* Toggle Arrow Styling */
-.toggle-arrow {
-    cursor: pointer;
-    font-size: 18px;
-    color: #E5EBEA;
-    margin-left: 10px;
-    display: flex;
-    align-items: center;
-}
-
-/* Task Button Styling */
-.task-btn {
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    padding: 0;
-    margin: 0;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Complete Button */
-.complete-btn {
-    background-color: #00A896;
-    color: #FFFFFF;
-}
-
-.complete-btn:hover {
-    background-color: #00796B;
-}
-
-/* Delete Button */
-.delete-btn {
-    background-color: #DA4167;
-    color: #FFFFFF;
-}
-
-.delete-btn:hover {
-    background-color: #B22F46;
+/* Adjust the position of the AI button */
+.ai-button {
+    right: 70px;
 }
