@@ -63,7 +63,7 @@
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
-                                <button type="button" class="ai-button">
+                                <button type="button" class="ai-button" onclick="generateAIBreakdown({{ task.id }})">
                                     ✨
                                 </button>
                             </div>
@@ -74,6 +74,9 @@
             {% endfor %}
         </ul>
     </div>
+
+    <div id="loading-spinner" style="display: none;">Loading...</div>
+    <div id="error-message" style="display: none;"></div>
 
     <!-- Custom JavaScript for Collapsible Sections -->
     <script>
@@ -90,7 +93,6 @@
             }
         }
 
-
         // Auto-resize function for the textarea
         function autoResize(textarea) {
             textarea.style.height = 'auto';  // Reset the height to auto to shrink the textarea first
@@ -103,6 +105,33 @@
                 autoResize(textarea);
             });
         });
+
+        function generateAIBreakdown(taskId) {
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const errorMessage = document.getElementById('error-message');
+            const textarea = document.getElementById(`textarea-${taskId}`);
+
+            loadingSpinner.style.display = 'block';
+            errorMessage.style.display = 'none';
+
+            fetch(`/ai_breakdown/${taskId}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        textarea.value = data.breakdown;
+                        autoResize(textarea);
+                    } else {
+                        throw new Error(data.error || 'Unknown error occurred');
+                    }
+                })
+                .catch(error => {
+                    errorMessage.textContent = `Error: ${error.message}`;
+                    errorMessage.style.display = 'block';
+                })
+                .finally(() => {
+                    loadingSpinner.style.display = 'none';
+                });
+        }
     </script>
 </body>
 
