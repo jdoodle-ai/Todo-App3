@@ -51,7 +51,7 @@ def delete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
-@app.route('/complete/<int:task_id>', methods=['GET'])
+@app.route('/complete/<int:task_id>', methods=['POST'])
 def complete_task(task_id):
     task = Task.query.get(task_id)
     if task:

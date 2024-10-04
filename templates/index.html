@@ -37,7 +37,7 @@
                         <!-- Action Buttons Aligned in a Row -->
                         <div class="task-actions">
                             <!-- Complete Button -->
-                            <form action="/complete/{{ task.id }}" method="get" class="inline-form">
+                            <form action="/complete/{{ task.id }}" method="post" class="inline-form">
                                 <button type="submit" class="task-btn complete-btn">
                                     <i class="fa fa-check"></i>
                                 </button>
@@ -59,15 +59,12 @@
 
                         <!-- Collapsible Task Breakdown Section -->
                         <div id="description-{{ task.id }}" class="task-breakdown-container" style="display: none;">
-                            <!-- Textarea with AI Magic Button and Clear Button -->
+                            <!-- Textarea with AI Magic Button -->
                             <div class="textarea-wrapper">
                                 <textarea name="description" class="description-textarea" id="textarea-{{ task.id }}"
                                     oninput="autoResize(this);">{{ task.description }}</textarea>
                                 <button type="button" class="ai-button">
                                     ✨
-                                </button>
-                                <button type="button" class="clear-button" onclick="clearDescription({{ task.id }})">
-                                    ❌
                                 </button>
                             </div>
 
@@ -93,6 +90,7 @@
             }
         }
 
+
         // Auto-resize function for the textarea
         function autoResize(textarea) {
             textarea.style.height = 'auto';  // Reset the height to auto to shrink the textarea first
@@ -105,20 +103,6 @@
                 autoResize(textarea);
             });
         });
-
-        // New function to clear description
-        function clearDescription(taskId) {
-            const textarea = document.getElementById(`textarea-${taskId}`);
-            textarea.value = '';
-            autoResize(textarea);
-            // Make an AJAX call to clear the description in the backend
-            fetch(`/clear_description/${taskId}`, { method: 'POST' })
-                .then(response => {
-                    if (!response.ok) {
-                        console.error('Failed to clear description');
-                    }
-                });
-        }
     </script>
 </body>
 
