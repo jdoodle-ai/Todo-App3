@@ -27,7 +27,7 @@
             {% for task in tasks %}
             <!-- Task Item with Divider -->
             <div class="task-divider">
-                <li class="task-item">
+                <li class="task-item" data-task-id="{{ task.id }}">
                     <div class="task-header">
                         <!-- Add the 'completed' class if task.completed is True -->
                         <span class="task-text {% if task.completed %}completed{% endif %}">
@@ -101,6 +101,27 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.description-textarea').forEach(textarea => {
                 autoResize(textarea);
+            });
+        });
+
+        // Add event listener for AI button clicks
+        document.querySelectorAll('.ai-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const taskId = this.closest('.task-item').dataset.taskId;
+                fetch(`/ai_breakdown/${taskId}`, {method: 'POST'})
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.querySelector(`#textarea-${taskId}`).value = data.breakdown;
+                            autoResize(document.querySelector(`#textarea-${taskId}`));
+                        } else {
+                            alert('Failed to generate task breakdown: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        alert('An error occurred while generating the task breakdown');
+                        console.error('Error:', error);
+                    });
             });
         });
     </script>

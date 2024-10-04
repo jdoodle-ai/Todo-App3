@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from ai_helper import get_task_breakdown
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -59,8 +60,18 @@ def complete_task(task_id):
         db.session.commit()
     return redirect(url_for('index'))
 
-
-
+@app.route('/ai_breakdown/<int:task_id>', methods=['POST'])
+def ai_breakdown(task_id):
+    task = Task.query.get(task_id)
+    if task:
+        try:
+            breakdown = get_task_breakdown(task.title)
+            task.description = breakdown
+            db.session.commit()
+            return jsonify({"success": True, "breakdown": breakdown})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+    return jsonify({"success": False, "error": "Task not found"}), 404
 
 
 if __name__ == '__main__':
